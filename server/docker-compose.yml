@@ -1,7 +1,14 @@
 services:
   triton-server:
     image: nvcr.io/nvidia/tritonserver:24.06-py3
-    command: tritonserver --model-repository=/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: tritonserver --model-repository=/models --model-control-mode=explicit --load-model=densenet_onnx
     ports:
       - "8000:8000"
       - "8001:8001"

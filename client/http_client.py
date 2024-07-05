@@ -1,5 +1,4 @@
 import numpy as np
-from PIL import Image
 import requests
 import json
 
@@ -37,8 +36,8 @@ response = requests.post(url, json=request_payload)
 if response.status_code == 200:
     response_json = response.json()
     print(response_json.keys())
-    # output_data = np.array(response_json["outputs"][0]["data"]).reshape(response_json["outputs"][0]["shape"])
-    # print("Output Data: ", output_data)
+    output_data = np.array(response_json["outputs"][0]["data"]).reshape(response_json["outputs"][0]["shape"])
+    print("Output Data: ", output_data)
     
 else:
     print("Request failed with status code: ", response.status_code)

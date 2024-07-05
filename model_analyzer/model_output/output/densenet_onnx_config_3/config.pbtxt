@@ -1,0 +1,70 @@
+name: "densenet_onnx"
+platform: "onnxruntime_onnx"
+version_policy {
+  latest {
+    num_versions: 1
+  }
+}
+input {
+  name: "data_0"
+  data_type: TYPE_FP32
+  format: FORMAT_NCHW
+  dims: 3
+  dims: 224
+  dims: 224
+  reshape {
+    shape: 1
+    shape: 3
+    shape: 224
+    shape: 224
+  }
+}
+output {
+  name: "fc6_1"
+  data_type: TYPE_FP32
+  dims: 1000
+  label_filename: "densenet_labels.txt"
+  reshape {
+    shape: 1
+    shape: 1000
+    shape: 1
+    shape: 1
+  }
+}
+instance_group {
+  count: 4
+  kind: KIND_GPU
+}
+default_model_filename: "model.onnx"
+dynamic_batching {
+}
+optimization {
+  execution_accelerators {
+    gpu_execution_accelerator {
+      name: "tensorrt"
+      parameters {
+        key: "max_workspace_size_bytes"
+        value: "4294967296"
+      }
+      parameters {
+        key: "precision_mode"
+        value: "FP16"
+      }
+      parameters {
+        key: "trt_engine_cache_enable"
+        value: "true"
+      }
+      parameters {
+        key: "trt_engine_cache_path"
+        value: "/models/densenet_onnx/1"
+      }
+    }
+  }
+  input_pinned_memory {
+    enable: true
+  }
+  output_pinned_memory {
+    enable: true
+  }
+}
+backend: "onnxruntime"
