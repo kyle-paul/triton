@@ -1,2 +1,5 @@
 *.onnx
 *.graphdef
+*.engine
+*.pth
+*.pb
