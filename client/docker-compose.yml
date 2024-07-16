@@ -1,5 +1,6 @@
 services:
   triton-client:
+    container_name: triton-client
     image: nvcr.io/nvidia/tritonserver:24.06-py3-sdk
     network_mode: host
     tty: true

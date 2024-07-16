@@ -1,4 +1,5 @@
 import json
+
 import numpy as np
 
 # triton_python_backend_utils is available in every Triton Python model. You
@@ -86,14 +87,17 @@ class TritonPythonModel:
         # Every Python backend must iterate over everyone of the requests
         # and create a pb_utils.InferenceResponse for each of them.
         for request in requests:
+            
             # Get INPUT0
             in_1 = pb_utils.get_input_tensor_by_name(
                 request, "recognition_postprocessing_input"
             ).as_numpy()
             text_list = []
+            
             for i in range(in_1.shape[0]):
                 text_list.append(decodeText(in_1[i]))
             print(text_list, flush=True)
+            
             out_tensor_0 = pb_utils.Tensor(
                 "recognition_postprocessing_output",
                 np.array(text_list).astype(output0_dtype),
@@ -106,17 +110,21 @@ class TritonPythonModel:
             #
             # pb_utils.InferenceResponse(
             #    output_tensors=..., TritonError("An error occurred"))
+            
             inference_response = pb_utils.InferenceResponse(
                 output_tensors=[out_tensor_0]
             )
             responses.append(inference_response)
+            
         # You should return a list of pb_utils.InferenceResponse. Length
         # of this list must match the length of `requests` list.
         return responses
 
     def finalize(self):
+        
         """`finalize` is called only once when the model is being unloaded.
         Implementing `finalize` function is OPTIONAL. This function allows
         the model to perform any necessary clean ups before exit.
         """
+
         print("Cleaning up...")

@@ -1,5 +1,5 @@
 name: "text_recognition"
-platform: "onnxruntime_onnx"
+backend: "onnxruntime"
 max_batch_size : 256
 input [
   {
@@ -15,3 +15,28 @@ output [
     dims: [ 26, 37 ]
   }
 ]
+
+dynamic_batching { }
+
+instance_group [
+    {
+      count: 2
+      kind: KIND_GPU
+    }
+]
+
+optimization {
+    graph : {
+        level : 1
+    }
+
+    execution_accelerators {
+        gpu_execution_accelerator : [ {
+            name : "tensorrt"
+            parameters { key: "precision_mode" value: "FP16" }
+            parameters { key: "max_workspace_size_bytes" value: "1073741824" }
+            parameters { key: "trt_engine_cache_enable" value: "true"}
+            parameters { key: "trt_engine_cache_path" value: "/models/text_recognition/1"}
+        }]
+    }
+}

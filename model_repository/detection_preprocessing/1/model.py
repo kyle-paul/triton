@@ -1,9 +1,33 @@
+# Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 import io
 import json
 
 import numpy as np
-import torch
-import torchvision.transforms as transforms
 
 # triton_python_backend_utils is available in every Triton Python model. You
 # need to use this module to create inference requests and responses. It also
@@ -80,18 +104,33 @@ class TritonPythonModel:
             )
 
             def image_loader(image):
-                [h, w] = image.size
-                resize_w = (w // 32) * 32
-                resize_h = (h // 32) * 32
+                # [h, w] = image.size
+                # resize_w = (w // 32) * 32
+                # resize_h = (h // 32) * 32
 
-                center_crop = resize_h if resize_w > resize_h else resize_w
-                loader = transforms.Compose(
-                    [transforms.CenterCrop(center_crop), transforms.ToTensor()]
-                )
+                # center_crop = resize_h if resize_w > resize_h else resize_w
+                # loader = transforms.Compose(
+                #     [transforms.CenterCrop(center_crop), transforms.ToTensor()]
+                # )
 
-                im = loader(image)
-                im = torch.unsqueeze(im, 0)
-                return im.permute(0, 2, 3, 1)
+                # im = loader(image)
+                # im = torch.unsqueeze(im, 0)
+                # return im.permute(0, 2, 3, 1)
+                
+                width, height = image.size
+                resize_w = (width // 32) * 32
+                resize_h = (height // 32) * 32
+                image = image.resize((resize_w, resize_h))
+
+                center_crop = min(resize_w, resize_h)
+                left = (resize_w - center_crop) // 2
+                top = (resize_h - center_crop) // 2
+                right = (resize_w + center_crop) // 2
+                bottom = (resize_h + center_crop) // 2
+
+                image = image.crop((left, top, right, bottom))
+                image = np.array(image).astype(np.float32)
+                return np.expand_dims(image, axis=0)
 
             img = in_0.as_numpy()
 
