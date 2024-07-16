@@ -14,12 +14,13 @@ def detection_preprocessing(image: cv2.Mat) -> np.ndarray:
     blob = cv2.dnn.blobFromImage(
         image, 1.0, (inpWidth, inpHeight), (123.68, 116.78, 103.94), True, False
     )
-    blob = np.transpose(blob, (0, 2, 3, 1))
+    
+    blob = np.transpose(blob, (0, 2, 3, 1))  # (1, 3, 480, 640)
     return blob
 
 
 def detection_postprocessing(scores, geometry, preprocessed_image):
-    def fourPointsTransform(frame, vertices):
+    def fourPointsTransform(frame, vertices):  # (480, 640, 3) / [[x1, y1], [x2, y2], [x1, y2], [x2, y1]]
         vertices = np.asarray(vertices)
         outputSize = (100, 32)
         targetVertices = np.array(
@@ -30,9 +31,9 @@ def detection_postprocessing(scores, geometry, preprocessed_image):
                 [outputSize[0] - 1, outputSize[1] - 1],
             ],
             dtype="float32",
-        )
+        ) # (4, 2)
 
-        rotationMatrix = cv2.getPerspectiveTransform(vertices, targetVertices)
+        rotationMatrix = cv2.getPerspectiveTransform(vertices, targetVertices) # (3, 3)
         result = cv2.warpPerspective(frame, rotationMatrix, outputSize)
         return result
 
@@ -53,27 +54,30 @@ def detection_postprocessing(scores, geometry, preprocessed_image):
         assert (
             scores.shape[3] == geometry.shape[3]
         ), "Invalid dimensions of scores and geometry"
+        
         height = scores.shape[2]
         width = scores.shape[3]
+        
         for y in range(0, height):
             # Extract data from scores
-            scoresData = scores[0][0][y]
-            x0_data = geometry[0][0][y]
-            x1_data = geometry[0][1][y]
-            x2_data = geometry[0][2][y]
-            x3_data = geometry[0][3][y]
-            anglesData = geometry[0][4][y]
+            scoresData = scores[0][0][y]   # (160, )
+            x0_data = geometry[0][0][y]    # (160, )
+            x1_data = geometry[0][1][y]    # (160, ) 
+            x2_data = geometry[0][2][y]    # (160, )
+            x3_data = geometry[0][3][y]    # (160, )
+            anglesData = geometry[0][4][y] # (160, )
+            
             for x in range(0, width):
-                score = scoresData[x]
+                score = scoresData[x]      # (1, )
 
                 # If score is lower than threshold score, move to next x
                 if score < scoreThresh:
                     continue
 
                 # Calculate offset
-                offsetX = x * 4.0
+                offsetX = x * 4.0          # x,y are indices of width, height
                 offsetY = y * 4.0
-                angle = anglesData[x]
+                angle = anglesData[x]      # (1, )
 
                 # Calculate cos and sin of angle
                 cosA = math.cos(angle)
@@ -97,26 +101,27 @@ def detection_postprocessing(scores, geometry, preprocessed_image):
         # Return detections and confidences
         return [detections, confidences]
 
-    scores = scores.transpose(0, 3, 1, 2)
-    geometry = geometry.transpose(0, 3, 1, 2)
-    frame = np.squeeze(preprocessed_image, axis=0)
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    [boxes, confidences] = decodeBoundingBoxes(scores, geometry)
-    indices = cv2.dnn.NMSBoxesRotated(boxes, confidences, 0.5, 0.4)
-
+    scores = scores.transpose(0, 3, 1, 2) # (1, 1, 120, 160)
+    geometry = geometry.transpose(0, 3, 1, 2) # (1, 5, 120, 160)
+    frame = np.squeeze(preprocessed_image, axis=0) # (480, 640, 3)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) # (480, 640, 3)
+    [boxes, confidences] = decodeBoundingBoxes(scores, geometry)  # [list: 248 of ((center_x, center_y), (w,h), angle), list: 248]
+    indices = cv2.dnn.NMSBoxesRotated(boxes, confidences, 0.5, 0.4) # Non-max suppression -> (1)
+    
     cropped_list = []
-    cv2.imwrite("frame.png", frame)
+    # cv2.imwrite("outputs/frame.png", frame)
+    
     count = 0
     for i in indices:
         # get 4 corners of the rotated rect
         count += 1
-        vertices = cv2.boxPoints(boxes[i])
-        cropped = fourPointsTransform(frame, vertices)
-        cv2.imwrite(str(count) + ".png", cropped)
-        cropped = np.expand_dims(cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY), axis=0)
-
-        cropped_list.append(((cropped / 255.0) - 0.5) * 2)
-    cropped_arr = np.stack(cropped_list, axis=0)
+        vertices = cv2.boxPoints(boxes[i])  # [[x1, y1], [x2, y2], [x1, y2], [x2, y1]]
+        cropped = fourPointsTransform(frame, vertices) # (32, 100, 3)
+        # cv2.imwrite(f"outputs/{str(count)}.png", cropped)
+        cropped = np.expand_dims(cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY), axis=0) # (1, 32, 100)
+        cropped_list.append(((cropped / 255.0) - 0.5) * 2) # normalize
+        
+    cropped_arr = np.stack(cropped_list, axis=0) # (1, 1, 32, 100)
 
     # Only keep the first image, since the models don't currently allow batching.
     # See part 2 for enabling batch sizes > 0
@@ -149,36 +154,35 @@ if __name__ == "__main__":
     client = httpclient.InferenceServerClient(url="localhost:8000")
 
     # Read image and create input object
-    raw_image = cv2.imread("./images/sample.jpg")
-    preprocessed_image = detection_preprocessing(raw_image)
-
+    raw_image = cv2.imread("./inputs/sample.jpg") # (4000, 3000, 3)
+    preprocessed_image = detection_preprocessing(raw_image) # (1, 480, 640, 3)
+    
     detection_input = httpclient.InferInput(
         "input_images:0", preprocessed_image.shape, datatype="FP32"
     )
     detection_input.set_data_from_numpy(preprocessed_image, binary_data=True)
 
-    # Query the server
+    # # Query the server
     detection_response = client.infer(
         model_name="text_detection", inputs=[detection_input]
     )
 
-    # Process responses from detection model
-    scores = detection_response.as_numpy("feature_fusion/Conv_7/Sigmoid:0")
-    geometry = detection_response.as_numpy("feature_fusion/concat_3:0")
-    cropped_images = detection_postprocessing(scores, geometry, preprocessed_image)
+    # # Process responses from detection model
+    scores = detection_response.as_numpy("feature_fusion/Conv_7/Sigmoid:0") # (1, 120, 160, 1) down 4
+    geometry = detection_response.as_numpy("feature_fusion/concat_3:0")     # (1, 120, 160, 5)
+    cropped_images = detection_postprocessing(scores, geometry, preprocessed_image) # (1, 32, 100)
 
-    # Create input object for recognition model
+    # # Create input object for recognition model
     recognition_input = httpclient.InferInput(
         "input.1", cropped_images.shape, datatype="FP32"
     )
     recognition_input.set_data_from_numpy(cropped_images, binary_data=True)
 
-    # Query the server
+    # # Query the server
     recognition_response = client.infer(
         model_name="text_recognition", inputs=[recognition_input]
     )
 
-    # Process response from recognition model
+    # # Process response from recognition model
     final_text = recognition_postprocessing(recognition_response.as_numpy("308"))
-
     print(final_text)
