@@ -1,0 +1,28 @@
+model_repository: /workspace/inference/model_analyzer/
+
+run_config_search_disable: True
+
+concurrency: [2, 4, 8, 16, 32]
+batch_sizes: [8, 16, 64]
+
+profile_models:
+  text_recogniition:
+    objectives:
+      - perf_throughput
+    constraints:
+      perf_latency_p99:
+        max: 15
+    model_config_parameters:
+      instance_group:
+        - kind: KIND_GPU
+          count: [1, 2]
+      dynamic_batching:
+        max_queue_delay_microseconds: [100]
+
+  text_dectection:
+    model_config_parameters:
+      instance_group:
+        - kind: KIND_GPU
+          count: [1, 2]
+      dynamic_batching:
+        max_queue_delay_microseconds: [100]

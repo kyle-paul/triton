@@ -7,4 +7,4 @@ services:
     stdin_open: true
     restart: unless-stopped
     volumes:
-      - ../:/workspace/inference/
+      - ../:/workspace/client/

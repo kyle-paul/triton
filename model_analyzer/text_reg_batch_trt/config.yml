@@ -1,0 +1,10 @@
+profile_models:
+  - model_name: text_reg_batch
+output_model_repository_path: /workspace/inference/model_analyzer/text_reg_batch_trt/output
+export_path: /workspace/inference/model_analyzer/text_reg_batch_trt/profile_results
+override_output_model_repository: true
+client_protocol: http
+triton_launch_mode: remote
+run_config_search_max_concurrency: 2
+run_config_search_max_model_batch_size: 2
+run_config_search_max_instance_count: 2

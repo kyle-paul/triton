@@ -1,0 +1,17 @@
+profile_models:
+  - model_name: "*"
+output_model_repository_path: ./output_model_repository
+client_protocol: http
+triton_launch_mode: remote
+triton_docker_image: nvcr.io/nvidia/tritonserver:24.06-py3
+triton_server_flags:
+  log-verbose: true
+concurrency:
+  start: 1
+  stop: 8
+  step: 1
+batch_sizes:
+  - 1
+  - 4
+  - 8
+duration_seconds: 60

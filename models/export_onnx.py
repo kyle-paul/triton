@@ -1,3 +1,4 @@
+import os
 import torch
 from networks.STR import STRModel
 
@@ -9,15 +10,18 @@ model.load_state_dict(state)
 trace_input = torch.randn(1, 1, 32, 100)
 dynamic_batching = True
 
+
+os.makedirs("/workspace/triton/model_repo/text_recognition/1", exist_ok=True)
+
 if dynamic_batching:
     torch.onnx.export (
-        model, trace_input, "/workspace/triton/model_repository/text_reg_batch/1/model.onnx", export_params=True, 
+        model, trace_input, "/workspace/triton/model_repo/text_recognition/1/model.onnx", export_params=True, 
         input_names = ['input.1'], output_names = ['308'],
         dynamic_axes={'input.1': {0: 'batch_size'}, '308': {0: 'batch_size'}}
     )
     
 else:
     torch.onnx.export (
-        model, trace_input, "/workspace/triton/model_repository/text_recognition/1/model.onnx", export_params=True, 
+        model, trace_input, "/workspace/triton/model_repo/text_recognition/1/model.onnx", export_params=True, 
         input_names = ['input.1'], output_names = ['308']
     )
