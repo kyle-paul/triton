@@ -1,0 +1,51 @@
+name: "mask_decoder"
+backend: "onnxruntime"
+
+dynamic_batching {}
+
+input [
+    {
+        name: "image_embedding"
+        data_type: TYPE_FP32
+        dims: [-1, 256, 64, 64]
+    }
+]
+
+input [
+    {
+        name: "sparse_embedding"
+        data_type: TYPE_FP32
+        dims: [-1, -1, 256]
+    }
+]
+
+input [
+    {
+        name: "dense_embedding"
+        data_type: TYPE_FP32
+        dims: [-1, 256, 64, 64]
+    }
+]
+
+output [
+    {
+        name: "masks"
+        data_type: TYPE_FP32
+        dims: [-1, -1, -1, -1]
+    }
+]
+
+output [
+    {
+        name: "scores"
+        data_type: TYPE_FP32
+        dims: [-1, 4]
+    }
+]
+
+instance_group [
+    {
+        count: 1
+        kind: KIND_GPU
+    }
+]

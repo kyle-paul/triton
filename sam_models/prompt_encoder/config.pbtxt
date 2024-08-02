@@ -1,0 +1,59 @@
+name: "prompt_encoder"
+backend: "onnxruntime"
+
+dynamic_batching {}
+
+input [
+    {
+        name: "point_coords"
+        data_type: TYPE_FP32
+        dims: [-1, -1, 2]
+    }
+]
+
+input [
+    {
+        name: "point_labels"
+        data_type: TYPE_FP32
+        dims: [-1, -1]
+    }
+]
+
+input [
+    {
+        name: "input_mask"
+        data_type: TYPE_FP32
+        dims: [-1, 1, 256, 256]
+    }
+]
+
+input [
+    {
+        name: "has_input_mask"
+        data_type: TYPE_FP32
+        dims: [1]
+    }
+]
+
+output [
+    {
+        name: "sparse_embedding"
+        data_type: TYPE_FP32
+        dims: [-1, -1, 256]
+    }
+]
+
+output [
+    {
+        name: "dense_embedding"
+        data_type: TYPE_FP32
+        dims: [-1, 256, 64, 64]
+    }
+]
+
+instance_group [
+    {
+        count: 1
+        kind: KIND_GPU
+    }
+]

@@ -9,22 +9,20 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+    command: tritonserver --model-repository=/models --model-control-mode=explicit --load-model=*
     ports:
       - "8000:8000"
       - "8001:8001"
       - "8002:8002"
     volumes:
-      - ../model_repository:/models
+      - ../sam_models:/models
       - ../:/workspace/server
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - NVIDIA_VISIBLE_DEVICES=1
-    shm_size: '1gb'
+    shm_size: "1gb"
     ulimits:
       memlock: -1
       stack: 67108864
     stdin_open: true
     tty: true
-
-
-  # tritonserver --model-repository=/models --model-control-mode=explicit --load-model=*
