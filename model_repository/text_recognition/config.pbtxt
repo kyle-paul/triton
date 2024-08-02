@@ -35,8 +35,10 @@ optimization {
             name : "tensorrt"
             parameters { key: "precision_mode" value: "FP16" }
             parameters { key: "max_workspace_size_bytes" value: "1073741824" }
+            parameters { key: "trt_timing_cache_enable" value: "true"}
+            parameters { key: "trt_timing_cache_path" value: "models/text_recognition/1/tensorrt"}
             parameters { key: "trt_engine_cache_enable" value: "true"}
-            parameters { key: "trt_engine_cache_path" value: "/models/text_recognition/1"}
+            parameters { key: "trt_engine_cache_path" value: "/models/text_recognition/1/tensorrt"}
         }]
     }
 }
